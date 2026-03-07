@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>国旗クイズ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            background-color: #f8fafc;
+        }
+
+        /* 画面遷移アニメーション */
+        .screen {
+            display: none;
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        .screen.active {
+            display: flex;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* カスタムトグルスイッチ */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #3b82f6;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3b82f6;
+        }
+        
+        /* フィードバックアイコン (マル・バツ) */
+        .feedback-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .feedback-icon {
+            font-size: 8rem;
+            transform: scale(0.5);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+        .show-feedback {
+            opacity: 1;
+        }
+        .show-feedback .feedback-icon {
+            transform: scale(1);
+        }
+        .correct-color { color: #22c55e; }
+        .incorrect-color { color: #ef4444; }
+
+        /* マイクアニメーション */
+        .mic-active {
+            animation: pulse-red 1.5s infinite;
+            background-color: #ef4444 !important;
+            color: white !important;
+        }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* 国旗画像のスタイル */
+        .flag-image {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            max-height: 200px;
+            object-fit: contain;
+            background-color: white;
+        }
+
+        /* 選択肢ボタンのアニメーション */
+        .choice-btn {
+            transition: all 0.1s;
+        }
+        .choice-btn:active {
+            transform: scale(0.98);
+        }
+        
+        ruby rt {
+            font-size: 0.6em;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex justify-center text-slate-800">
+
+<div id="app" class="w-full max-w-md bg-white min-h-screen relative shadow-2xl flex flex-col overflow-x-hidden">
+
+    <!-- ヘッダー -->
+    <header class="bg-blue-600 text-white p-4 flex justify-between items-center shadow-md z-10">
+        <h1 class="text-xl font-bold tracking-wider" id="header-title">国旗クイズ</h1>
+        <button id="btn-open-settings" class="text-xl p-2 hover:bg-blue-700 rounded-full transition" aria-label="設定">
+            <i class="fas fa-cog"></i>
+        </button>
+    </header>
+
+    <!-- メインコンテンツ領域 -->
+    <main class="flex-grow relative flex flex-col">
+
+        <!-- ================= ホーム画面 ================= -->
+        <div id="screen-home" class="screen active flex-col p-6 h-full justify-center gap-8">
+            <div class="text-center mb-4">
+                <i class="fas fa-globe-americas text-6xl text-blue-500 mb-4"></i>
+                <h2 class="text-2xl font-black text-slate-700">世界国旗クイズ</h2>
+                <p class="text-slate-500 text-sm mt-2">モードと問題数を選んでスタート！</p>
+            </div>
+
+            <!-- モード選択 -->
+            <div class="bg-slate-100 p-1 rounded-xl flex shadow-inner">
+                <button id="mode-choices" class="flex-1 py-3 text-center font-bold rounded-lg transition-colors bg-white shadow text-blue-600" onclick="setMode('choices')">
+                    <i class="fas fa-th-large mr-2"></i>四択モード
+                </button>
+                <button id="mode-voice" class="flex-1 py-3 text-center font-bold rounded-lg transition-colors text-slate-500 hover:text-slate-700" onclick="setMode('voice')">
+                    <i class="fas fa-microphone mr-2"></i>音声入力
+                </button>
+            </div>
+
+            <!-- 問題数選択 -->
+            <div>
+                <h3 class="text-sm font-bold text-slate-500 mb-3 text-center">問題数</h3>
+                <div class="grid grid-cols-3 gap-3" id="question-count-container">
+                    <!-- JSで生成 -->
+                </div>
+            </div>
+
+            <!-- スタートボタン -->
+            <button onclick="startQuiz()" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg text-lg transition-transform active:scale-95 flex justify-center items-center gap-2">
+                <i class="fas fa-play"></i> クイズスタート
+            </button>
+            
+            <p id="voice-warning" class="text-xs text-red-500 text-center hidden mt-2">
+                ※お使いのブラウザは音声入力に対応していません
+            </p>
+        </div>
+
+        <!-- ================= 設定画面 ================= -->
+        <div id="screen-settings" class="screen flex-col p-6 h-full">
+            <h2 class="text-2xl font-bold mb-6 border-b pb-2"><i class="fas fa-sliders-h mr-2"></i>設定</h2>
+            
+            <div class="flex items-center justify-between py-4 border-b">
+                <div>
+                    <h3 class="font-bold text-lg">ふりがな表示</h3>
+                    <p class="text-sm text-slate-500">国名にふりがなを振ります</p>
+                </div>
+                <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                    <input type="checkbox" name="toggle" id="toggle-furigana" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300 top-0 left-0 z-10"/>
+                    <label for="toggle-furigana" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer transition-colors duration-300"></label>
+                </div>
+            </div>
+
+            <button onclick="navigate('home')" class="mt-auto w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 rounded-xl transition-colors">
+                戻る
+            </button>
+        </div>
+
+        <!-- ================= クイズ画面 ================= -->
+        <div id="screen-quiz" class="screen flex-col h-full bg-slate-50">
+            <!-- 進捗バー -->
+            <div class="bg-slate-200 h-2 w-full">
+                <div id="progress-bar" class="bg-blue-500 h-2 transition-all duration-300 w-0"></div>
+            </div>
+            
+            <div class="p-4 flex justify-between items-center text-sm font-bold text-slate-500">
+                <span id="question-counter">問 1 / 10</span>
+                <span id="timer-display" class="font-mono text-base"><i class="far fa-clock mr-1"></i>0.0s</span>
+            </div>
+
+            <div class="flex-grow flex flex-col items-center justify-center p-4">
+                <div class="w-full max-w-sm aspect-[3/2] flex items-center justify-center mb-8 relative">
+                    <!-- 画像ローディングプレースホルダー -->
+                    <div id="flag-loader" class="absolute inset-0 flex items-center justify-center text-slate-300">
+                        <i class="fas fa-spinner fa-spin text-4xl"></i>
+                    </div>
+                    <img id="flag-image" src="" alt="国旗" class="flag-image w-full h-full object-contain hidden relative z-10" onload="this.classList.remove('hidden'); document.getElementById('flag-loader').classList.add('hidden');">
+                </div>
+
+                <!-- 四択UI -->
+                <div id="ui-choices" class="w-full grid grid-cols-1 gap-3 hidden">
+                    <!-- JSで生成 -->
+                </div>
+
+                <!-- 音声入力UI -->
+                <div id="ui-voice" class="w-full flex flex-col items-center justify-center hidden flex-grow">
+                    <div id="voice-result-text" class="h-12 text-xl font-bold text-slate-700 mb-6 text-center w-full px-4 break-words flex items-center justify-center">
+                        マイクをタップして国名を答えてください
+                    </div>
+                    <button id="btn-mic" class="w-24 h-24 rounded-full bg-blue-100 text-blue-500 text-4xl shadow-lg flex items-center justify-center transition-all">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <p class="text-slate-400 text-sm mt-6">※「アメリカ」でも「アメリカ合衆国」でも正解になります</p>
+                </div>
+            </div>
+
+            <!-- フィードバック（⭕️/❌） -->
+            <div id="feedback-overlay" class="feedback-overlay">
+                <i id="feedback-icon" class="fas feedback-icon"></i>
+            </div>
+        </div>
+
+        <!-- ================= 結果画面 ================= -->
+        <div id="screen-result" class="screen flex-col h-full bg-slate-50 overflow-y-auto">
+            <div class="p-6 flex flex-col items-center">
+                <h2 class="text-3xl font-black text-slate-800 mb-2">結果発表</h2>
+                
+                <div class="bg-white w-full rounded-2xl shadow-md p-6 mb-6 text-center border-t-4 border-blue-500">
+                    <div class="text-5xl font-black text-blue-600 mb-2" id="result-score">10/10</div>
+                    <p class="text-slate-500 font-bold mb-4">正答率: <span id="result-percent">100%</span></p>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-left bg-slate-50 p-4 rounded-lg">
+                        <div>
+                            <p class="text-xs text-slate-400 mb-1">合計タイム</p>
+                            <p class="font-mono font-bold text-lg" id="result-total-time">00:00.0</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-400 mb-1">1問平均</p>
+                            <p class="font-mono font-bold text-lg" id="result-avg-time">0.0s</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full w-full mb-6">
+                    <h3 class="font-bold text-slate-700 mb-3 flex items-center"><i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>間違えた問題 (<span id="wrong-count">0</span>)</h3>
+                    <div id="wrong-list" class="flex flex-col gap-3">
+                        <!-- JSで生成 -->
+                    </div>
+                    <p id="no-wrong-msg" class="text-center text-slate-400 py-4 hidden">全問正解です！素晴らしい！</p>
+                </div>
+
+                <button onclick="navigate('home')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg text-lg transition-transform active:scale-95 mb-4">
+                    トップへ戻る
+                </button>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script>
+/**
+ * 国旗クイズ アプリケーションロジック
+ */
+
+// --- データ定義 ---
+// 形式: id|国名|ふりがな|別名1|別名2...
+const rawCountries = [
+  "af|アフガニスタン|あふがにすたん",
+  "al|アルバニア|あるばにあ",
+  "dz|アルジェリア|あるじぇりあ",
+  "ad|アンドラ|あんどら",
+  "ao|アンゴラ|あんごら",
+  "ag|アンティグア・バーブーダ|あんてぃぐあばーぶーだ|アンティグアバーブーダ",
+  "ar|アルゼンチン|あるぜんちん",
+  "am|アルメニア|あるめにあ",
+  "au|オーストラリア|おーすとらりあ",
+  "at|オーストリア|おーすとりあ",
+  "az|アゼルバイジャン|あぜるばいじゃん",
+  "bs|バハマ|ばはま",
+  "bh|バーレーン|ばーれーん",
+  "bd|バングラデシュ|ばんぐらでしゅ",
+  "bb|バルバドス|ばるばどす",
+  "by|ベラルーシ|べらるーし",
+  "be|ベルギー|べるぎー",
+  "bz|ベリーズ|べりーず",
+  "bj|ベナン|べなん",
+  "bt|ブータン|ぶーたん",
+  "bo|ボリビア|ぼりびあ",
+  "ba|ボスニア・ヘルツェゴビナ|ぼすにあへるつぇごびな",
+  "bw|ボツワナ|ぼつわな",
+  "br|ブラジル|ぶらじる",
+  "bn|ブルネイ|ぶるねい",
+  "bg|ブルガリア|ぶるがりあ",
+  "bf|ブルキナファソ|ぶるきなふぁそ",
+  "bi|ブルンジ|ぶるんじ",
+  "cv|カーボベルデ|かーぼべるで",
+  "kh|カンボジア|かんぼじあ",
+  "cm|カメルーン|かめるーん",
+  "ca|カナダ|かなだ",
+  "cf|中央アフリカ共和国|ちゅうおうあふりかきょうわこく|中央アフリカ",
+  "td|チャド|ちゃど",
+  "cl|チリ|ちり",
+  "cn|中国|ちゅうごく|中華人民共和国",
+  "co|コロンビア|ころんびあ",
+  "km|コモロ|こもろ",
+  "cg|コンゴ共和国|こんごきょうわこく|コンゴ",
+  "cd|コンゴ民主共和国|こんごみんしゅきょうわこく",
+  "cr|コスタリカ|こすたりか",
+  "ci|コートジボワール|こーとじぼわーる",
+  "hr|クロアチア|くろあちあ",
+  "cu|キューバ|きゅーば",
+  "cy|キプロス|きぷろす",
+  "cz|チェコ|ちぇこ",
+  "dk|デンマーク|でんまーく",
+  "dj|ジブチ|じぶち",
+  "dm|ドミニカ国|どみにかこく|ドミニカ",
+  "do|ドミニカ共和国|どみにかきょうわこく",
+  "ec|エクアドル|えくあどる",
+  "eg|エジプト|えじぷと",
+  "sv|エルサルバドル|えるさるばどる",
+  "gq|赤道ギニア|せきどうぎにあ",
+  "er|エリトリア|えりとりあ",
+  "ee|エストニア|えすとにあ",
+  "sz|エスワティニ|えすわてぃに",
+  "et|エチオピア|えちおぴあ",
+  "fj|フィジー|ふぃじー",
+  "fi|フィンランド|ふぃんらんど",
+  "fr|フランス|ふらんす",
+  "ga|ガボン|がぼん",
+  "gm|ガンビア|がんびあ",
+  "ge|ジョージア|じょーじあ",
+  "de|ドイツ|どいつ",
+  "gh|ガーナ|がーな",
+  "gr|ギリシャ|ぎりしゃ",
+  "gd|グレナダ|ぐれなだ",
+  "gt|グアテマラ|ぐあてまら",
+  "gn|ギニア|ぎにあ",
+  "gw|ギニアビサウ|ぎにあびさう",
+  "gy|ガイアナ|がいあな",
+  "ht|ハイチ|はいち",
+  "hn|ホンジュラス|ほんじゅらす",
+  "hu|ハンガリー|はんがりー",
+  "is|アイスランド|あいすらんど",
+  "in|インド|いんど",
+  "id|インドネシア|いんどねしあ",
+  "ir|イラン|いらん",
+  "iq|イラク|いらく",
+  "ie|アイルランド|あいるらんど",
+  "il|イスラエル|いすらえる",
+  "it|イタリア|いたりあ",
+  "jm|ジャマイカ|じゃまいか",
+  "jp|日本|にほん|にっぽん",
+  "jo|ヨルダン|よるだん",
+  "kz|カザフスタン|かざふすたん",
+  "ke|ケニア|けにあ",
+  "ki|キリバス|きりばす",
+  "kp|北朝鮮|きたちょうせん|朝鮮民主主義人民共和国",
+  "kr|韓国|かんこく|大韓民国",
+  "kw|クウェート|くうぇーと",
+  "kg|キルギス|きるぎす",
+  "la|ラオス|らおす",
+  "lv|ラトビア|らとびあ",
+  "lb|レバノン|ればのん",
+  "ls|レソト|れそと",
+  "lr|リベリア|りべりあ",
+  "ly|リビア|りびあ",
+  "li|リヒテンシュタイン|りひてんしゅたいん",
+  "lt|リトアニア|りとあにあ",
+  "lu|ルクセンブルク|るくせんぶるく",
+  "mg|マダガスカル|まだがすかる",
+  "mw|マラウイ|まらうい",
+  "my|マレーシア|まれーしあ",
+  "mv|モルディブ|もるでぃぶ",
+  "ml|マリ|まり",
+  "mt|マルタ|まるた",
+  "mh|マーシャル諸島|まーしゃるしょとう",
+  "mr|モーリタニア|もーりたにあ",
+  "mu|モーリシャス|もーりしゃす",
+  "mx|メキシコ|めきしこ",
+  "fm|ミクロネシア連邦|みくろねしあれんぽう|ミクロネシア",
+  "md|モルドバ|もるどば",
+  "mc|モナコ|もなこ",
+  "mn|モンゴル|もんごる",
+  "me|モンテネグロ|もんてねぐろ",
+  "ma|モロッコ|もろっこ",
+  "mz|モザンビーク|もざんびーく",
+  "mm|ミャンマー|みゃんまー",
+  "na|ナミビア|なみびあ",
+  "nr|ナウル|なうる",
+  "np|ネパール|ねぱーる",
+  "nl|オランダ|おらんだ",
+  "nz|ニュージーランド|にゅーじーらんど",
+  "ni|ニカラグア|にからぐあ",
+  "ne|ニジェール|にじぇーる",
+  "ng|ナイジェリア|ないじぇりあ",
+  "mk|北マケドニア|きたまけどにあ|マケドニア",
+  "no|ノルウェー|のるうぇー",
+  "om|オマーン|おまーん",
+  "pk|パキスタン|ぱきすたん",
+  "pw|パラオ|ぱらお",
+  "pa|パナマ|ぱなま",
+  "pg|パプアニューギニア|ぱぷあにゅーぎにあ",
+  "py|パラグアイ|ぱらぐあい",
+  "pe|ペルー|ぺるー",
+  "ph|フィリピン|ふぃりぴん",
+  "pl|ポーランド|ぽーらんど",
+  "pt|ポルトガル|ぽるとがる",
+  "qa|カタール|かたーる",
+  "ro|ルーマニア|るーまにあ",
+  "ru|ロシア|ろしあ|ロシア連邦",
+  "rw|ルワンダ|るわんだ",
+  "kn|セントクリストファー・ネイビス|せんとくりすとふぁーねいびす",
+  "lc|セントルシア|せんとるしあ",
+  "vc|セントビンセント・グレナディーン|せんとびんせんとぐれなでぃーん",
+  "ws|サモア|さもあ",
+  "sm|サンマリノ|さんまりの",
+  "st|サントメ・プリンシペ|さんとめぷりんしぺ",
+  "sa|サウジアラビア|さうじあらびあ",
+  "sn|セネガル|せねがる",
+  "rs|セルビア|せるびあ",
+  "sc|セーシェル|せーしぇる",
+  "sl|シエラレオネ|しえられおね",
+  "sg|シンガポール|しんがぽーる",
+  "sk|スロバキア|すろばきあ",
+  "si|スロベニア|すろべにあ",
+  "sb|ソロモン諸島|そろもんしょとう",
+  "so|ソマリア|そまりあ",
+  "za|南アフリカ|みなみあふりか|南アフリカ共和国",
+  "ss|南スーダン|みなみすーだん",
+  "es|スペイン|すぺいん",
+  "lk|スリランカ|すりらんか",
+  "sd|スーダン|すーだん",
+  "sr|スリナム|すりなむ",
+  "se|スウェーデン|すうぇーでん",
+  "ch|スイス|すいす",
+  "sy|シリア|しりあ",
+  "tj|タジキスタン|たじきすたん",
+  "tz|タンザニア|たんざにあ",
+  "th|タイ|たい",
+  "tl|東ティモール|ひがしてぃもーる",
+  "tg|トーゴ|とーご",
+  "to|トンガ|とんが",
+  "tt|トリニダード・トバゴ|とりにだーどとばご",
+  "tn|チュニジア|ちゅにじあ",
+  "tr|トルコ|とるこ",
+  "tm|トルクメニスタン|とるくめにすたん",
+  "tv|ツバル|つばる",
+  "ug|ウガンダ|うがんだ",
+  "ua|ウクライナ|うくらいな",
+  "ae|アラブ首長国連邦|あらぶしゅちょうこくれんぽう|アラブ",
+  "gb|イギリス|いぎりす|英国",
+  "us|アメリカ|あめりか|アメリカ合衆国|米国",
+  "uy|ウルグアイ|うるぐあい",
+  "uz|ウズベキスタン|うずべきすたん",
+  "vu|バヌアツ|ばぬあつ",
+  "va|バチカン市国|ばちかんしこく|バチカン",
+  "ve|ベネズエラ|べねずえら",
+  "vn|ベトナム|べとなむ",
+  "ye|イエメン|いえめん",
+  "zm|ザンビア|ざんびあ",
+  "zw|ジンバブエ|じんばぶえ",
+  "tw|台湾|たいわん"
+];
+
+const countries = rawCountries.map(data => {
+    const parts = data.split('|');
+    return {
+        id: parts[0],
+        name: parts[1],
+        kana: parts[2],
+        aliases: parts.slice(3),
+        flagUrl: `https://flagcdn.com/w320/${parts[0]}.png`
+    };
+});
+
+// --- ステート管理 ---
+const state = {
+    screen: 'home',
+    mode: 'choices', // 'choices' or 'voice'
+    questionCount: 10, // 10, 20, 50, 100, 'all'
+    settings: {
+        furigana: true
+    },
+    quiz: {
+        questions: [],
+        currentIndex: 0,
+        history: [],
+        questionStartTime: 0,
+        isAnswering: false,
+        timerInterval: null
+    }
+};
+
+const counts = [10, 20, 50, 100, 'all'];
+
+// Web Speech API の準備
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+const isSpeechSupported = !!SpeechRecognition;
+
+if (isSpeechSupported) {
+    recognition = new SpeechRecognition();
+    recognition.lang = 'ja-JP';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('voice-result-text').innerText = transcript;
+        stopMicPulse();
+        checkAnswerVoice(transcript);
+    };
+
+    recognition.onerror = (event) => {
+        console.error("Speech Recognition Error:", event.error);
+        if(event.error === 'no-speech') {
+            document.getElementById('voice-result-text').innerText = "音声が検出されませんでした。もう一度お試しください。";
+        } else {
+            document.getElementById('voice-result-text').innerText = "エラーが発生しました: " + event.error;
+        }
+        stopMicPulse();
+    };
+    
+    recognition.onend = () => {
+        stopMicPulse();
+    };
+}
+
+// --- 初期化 ---
+document.addEventListener('DOMContentLoaded', () => {
+    initSettings();
+    renderQuestionCounts();
+    setupEventListeners();
+    
+    if (!isSpeechSupported) {
+        document.getElementById('voice-warning').classList.remove('hidden');
+    }
+});
+
+function setupEventListeners() {
+    document.getElementById('btn-open-settings').addEventListener('click', () => navigate('settings'));
+    
+    document.getElementById('toggle-furigana').addEventListener('change', (e) => {
+        state.settings.furigana = e.target.checked;
+        saveSettings();
+    });
+
+    document.getElementById('btn-mic').addEventListener('click', startDictation);
+}
+
+function initSettings() {
+    const saved = localStorage.getItem('flagQuizSettings');
+    if (saved) {
+        state.settings = JSON.parse(saved);
+    }
+    document.getElementById('toggle-furigana').checked = state.settings.furigana;
+}
+
+function saveSettings() {
+    localStorage.setItem('flagQuizSettings', JSON.stringify(state.settings));
+}
+
+// --- ナビゲーション ---
+function navigate(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(`screen-${screenId}`).classList.add('active');
+    state.screen = screenId;
+
+    if (screenId === 'home') {
+        document.getElementById('btn-open-settings').style.visibility = 'visible';
+    } else {
+        document.getElementById('btn-open-settings').style.visibility = 'hidden';
+    }
+}
+
+// --- ホーム画面UI ---
+function setMode(mode) {
+    if (mode === 'voice' && !isSpeechSupported) {
+        alert('お使いのブラウザは音声入力に対応していません。(ChromeやSafari等の最新版をご利用ください)');
+        return;
+    }
+    state.mode = mode;
+    const btnChoices = document.getElementById('mode-choices');
+    const btnVoice = document.getElementById('mode-voice');
+    
+    if (mode === 'choices') {
+        btnChoices.className = "flex-1 py-3 text-center font-bold rounded-lg transition-colors bg-white shadow text-blue-600";
+        btnVoice.className = "flex-1 py-3 text-center font-bold rounded-lg transition-colors text-slate-500 hover:text-slate-700";
+    } else {
+        btnVoice.className = "flex-1 py-3 text-center font-bold rounded-lg transition-colors bg-white shadow text-blue-600";
+        btnChoices.className = "flex-1 py-3 text-center font-bold rounded-lg transition-colors text-slate-500 hover:text-slate-700";
+    }
+}
+
+function renderQuestionCounts() {
+    const container = document.getElementById('question-count-container');
+    container.innerHTML = '';
+    
+    counts.forEach(count => {
+        const btn = document.createElement('button');
+        const text = count === 'all' ? '全問' : `${count}問`;
+        
+        const isSelected = state.questionCount === count;
+        btn.className = `py-3 rounded-lg font-bold border-2 transition-all ${isSelected ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-slate-200 text-slate-500 hover:border-blue-300'}`;
+        btn.innerText = text;
+        btn.onclick = () => {
+            state.questionCount = count;
+            renderQuestionCounts();
+        };
+        container.appendChild(btn);
+    });
+}
+
+// --- クイズロジック ---
+function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function startQuiz() {
+    // 問題を準備
+    let shuffledCountries = shuffleArray(countries);
+    const limit = state.questionCount === 'all' ? countries.length : state.questionCount;
+    state.quiz.questions = shuffledCountries.slice(0, limit);
+    state.quiz.currentIndex = 0;
+    state.quiz.history = [];
+    
+    // UI切り替え
+    const uiChoices = document.getElementById('ui-choices');
+    const uiVoice = document.getElementById('ui-voice');
+    
+    if (state.mode === 'choices') {
+        uiChoices.classList.remove('hidden');
+        uiVoice.classList.add('hidden');
+    } else {
+        uiChoices.classList.add('hidden');
+        uiVoice.classList.remove('hidden');
+    }
+    
+    navigate('quiz');
+    showQuestion();
+}
+
+function showQuestion() {
+    state.quiz.isAnswering = false;
+    const currentQ = state.quiz.questions[state.quiz.currentIndex];
+    
+    // UI更新
+    document.getElementById('question-counter').innerText = `問 ${state.quiz.currentIndex + 1} / ${state.quiz.questions.length}`;
+    document.getElementById('progress-bar').style.width = `${((state.quiz.currentIndex) / state.quiz.questions.length) * 100}%`;
+    
+    // 画像セット
+    const img = document.getElementById('flag-image');
+    const loader = document.getElementById('flag-loader');
+    img.classList.add('hidden');
+    loader.classList.remove('hidden');
+    img.src = currentQ.flagUrl;
+
+    if (state.mode === 'choices') {
+        generateChoicesUI(currentQ);
+    } else {
+        resetVoiceUI();
+    }
+
+    // タイマー開始
+    state.quiz.questionStartTime = Date.now();
+    startTimer();
+    
+    // 次の画像をプリロード
+    if (state.quiz.currentIndex + 1 < state.quiz.questions.length) {
+        const nextImg = new Image();
+        nextImg.src = state.quiz.questions[state.quiz.currentIndex + 1].flagUrl;
+    }
+}
+
+function startTimer() {
+    clearInterval(state.quiz.timerInterval);
+    const display = document.getElementById('timer-display');
+    state.quiz.timerInterval = setInterval(() => {
+        const elapsed = (Date.now() - state.quiz.questionStartTime) / 1000;
+        display.innerHTML = `<i class="far fa-clock mr-1"></i>${elapsed.toFixed(1)}s`;
+    }, 100);
+}
+
+function stopTimer() {
+    clearInterval(state.quiz.timerInterval);
+    return Date.now() - state.quiz.questionStartTime;
+}
+
+// ふりがな付きHTML生成
+function getCountryHtml(country) {
+    if (state.settings.furigana && country.kana) {
+        return `<ruby>${country.name}<rt>${country.kana}</rt></ruby>`;
+    }
+    return country.name;
+}
+
+function generateChoicesUI(correctCountry) {
+    const choices = [correctCountry];
+    while(choices.length < 4) {
+        const rand = countries[Math.floor(Math.random() * countries.length)];
+        if (!choices.some(c => c.id === rand.id)) {
+            choices.push(rand);
+        }
+    }
+    const shuffledChoices = shuffleArray(choices);
+    
+    const container = document.getElementById('ui-choices');
+    container.innerHTML = '';
+    
+    shuffledChoices.forEach(choice => {
+        const btn = document.createElement('button');
+        btn.className = "choice-btn bg-white border-2 border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-700 font-bold py-4 px-4 rounded-xl shadow-sm text-lg w-full text-center";
+        btn.innerHTML = getCountryHtml(choice);
+        btn.onclick = () => {
+            if(state.quiz.isAnswering) return;
+            checkAnswerChoice(choice.id === correctCountry.id, choice.name);
+        };
+        container.appendChild(btn);
+    });
+}
+
+function resetVoiceUI() {
+    document.getElementById('voice-result-text').innerText = "マイクをタップして答える";
+    stopMicPulse();
+}
+
+// 音声入力の文字列正規化（ひらがな化、スペース除去）
+function toHiragana(str) {
+    return str.replace(/[\u30a1-\u30f6]/g, function(match) {
+        var chr = match.charCodeAt(0) - 0x60;
+        return String.fromCharCode(chr);
+    });
+}
+
+function normalizeString(str) {
+    if(!str) return "";
+    return toHiragana(str).replace(/[\s　・]/g, '').toLowerCase();
+}
+
+function checkAnswerVoice(transcript) {
+    if(state.quiz.isAnswering) return;
+    
+    const currentQ = state.quiz.questions[state.quiz.currentIndex];
+    const normalizedInput = normalizeString(transcript);
+    
+    // 正解のバリエーションを作成
+    const correctAnswers = [currentQ.name, currentQ.kana, ...(currentQ.aliases || [])];
+    
+    const isCorrect = correctAnswers.some(ans => normalizeString(ans) === normalizedInput);
+    
+    checkAnswerChoice(isCorrect, transcript);
+}
+
+function checkAnswerChoice(isCorrect, userAnswer) {
+    state.quiz.isAnswering = true;
+    const timeTaken = stopTimer();
+    const currentQ = state.quiz.questions[state.quiz.currentIndex];
+    
+    // 履歴保存
+    state.quiz.history.push({
+        isCorrect,
+        timeTaken,
+        country: currentQ,
+        userAnswer
+    });
+    
+    // フィードバック表示
+    showFeedback(isCorrect);
+    
+    // 次へ
+    setTimeout(() => {
+        hideFeedback();
+        state.quiz.currentIndex++;
+        if (state.quiz.currentIndex < state.quiz.questions.length) {
+            showQuestion();
+        } else {
+            showResult();
+        }
+    }, 1000); // 1秒後に次へ
+}
+
+// --- アニメーション・フィードバック ---
+function showFeedback(isCorrect) {
+    const overlay = document.getElementById('feedback-overlay');
+    const icon = document.getElementById('feedback-icon');
+    
+    if (isCorrect) {
+        icon.className = "far fa-circle feedback-icon correct-color";
+    } else {
+        icon.className = "fas fa-times feedback-icon incorrect-color";
+    }
+    
+    overlay.classList.add('show-feedback');
+}
+
+function hideFeedback() {
+    const overlay = document.getElementById('feedback-overlay');
+    overlay.classList.remove('show-feedback');
+}
+
+// --- 音声入力コントロール ---
+function startDictation() {
+    if(state.quiz.isAnswering) return;
+    if(!recognition) return;
+    
+    try {
+        document.getElementById('voice-result-text').innerText = "聞き取っています...";
+        document.getElementById('btn-mic').classList.add('mic-active');
+        recognition.start();
+    } catch(e) {
+        // すでに開始されている場合などのエラー回避
+        console.log(e);
+        stopMicPulse();
+    }
+}
+
+function stopMicPulse() {
+    document.getElementById('btn-mic').classList.remove('mic-active');
+}
+
+// --- 結果画面 ---
+function formatTime(ms) {
+    const totalSeconds = ms / 1000;
+    if (totalSeconds < 60) {
+        return totalSeconds.toFixed(1) + "s";
+    }
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = (totalSeconds % 60).toFixed(1);
+    return `${mins}m ${secs}s`;
+}
+
+function showResult() {
+    document.getElementById('progress-bar').style.width = '100%';
+    navigate('result');
+    
+    const history = state.quiz.history;
+    const totalQ = history.length;
+    const correctCount = history.filter(h => h.isCorrect).length;
+    const totalTime = history.reduce((sum, h) => sum + h.timeTaken, 0);
+    const avgTime = totalQ > 0 ? totalTime / totalQ : 0;
+    const percent = Math.round((correctCount / totalQ) * 100);
+    
+    document.getElementById('result-score').innerText = `${correctCount}/${totalQ}`;
+    document.getElementById('result-percent').innerText = `${percent}%`;
+    document.getElementById('result-total-time').innerText = formatTime(totalTime);
+    document.getElementById('result-avg-time').innerText = formatTime(avgTime);
+    
+    // 間違えた問題リスト
+    const wrongs = history.filter(h => !h.isCorrect);
+    const listContainer = document.getElementById('wrong-list');
+    const noWrongMsg = document.getElementById('no-wrong-msg');
+    
+    document.getElementById('wrong-count').innerText = wrongs.length;
+    listContainer.innerHTML = '';
+    
+    if (wrongs.length === 0) {
+        listContainer.classList.add('hidden');
+        noWrongMsg.classList.remove('hidden');
+    } else {
+        listContainer.classList.remove('hidden');
+        noWrongMsg.classList.add('hidden');
+        
+        wrongs.forEach(wrong => {
+            const div = document.createElement('div');
+            div.className = "flex items-center bg-white p-3 rounded-lg border border-slate-100 shadow-sm";
+            
+            div.innerHTML = `
+                <img src="${wrong.country.flagUrl}" class="w-16 h-10 object-contain border border-slate-200 rounded bg-white mr-4">
+                <div class="flex-grow">
+                    <p class="text-xs text-red-500 font-bold mb-0.5">正解</p>
+                    <p class="font-bold text-slate-800">${getCountryHtml(wrong.country)}</p>
+                </div>
+            `;
+            listContainer.appendChild(div);
+        });
+    }
+}
+
+</script>
+</body>
+</html>
