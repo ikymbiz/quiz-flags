@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>国旗クイズ</title>
+    <title>世界クイズ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
-        
+
         body {
             font-family: 'Noto Sans JP', sans-serif;
             -webkit-tap-highlight-color: transparent;
@@ -37,8 +37,8 @@
         .toggle-checkbox:checked + .toggle-label {
             background-color: #3b82f6;
         }
-        
-        /* フィードバックアイコン (マル・バツ) */
+
+        /* フィードバックアイコン */
         .feedback-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -56,12 +56,8 @@
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
         }
-        .show-feedback {
-            opacity: 1;
-        }
-        .show-feedback .feedback-icon {
-            transform: scale(1);
-        }
+        .show-feedback { opacity: 1; }
+        .show-feedback .feedback-icon { transform: scale(1); }
         .correct-color { color: #22c55e; }
         .incorrect-color { color: #ef4444; }
 
@@ -77,7 +73,7 @@
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
 
-        /* 国旗画像のスタイル */
+        /* 国旗画像 */
         .flag-image {
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             border: 1px solid #e2e8f0;
@@ -87,17 +83,128 @@
             background-color: white;
         }
 
-        /* 選択肢ボタンのアニメーション */
-        .choice-btn {
-            transition: all 0.1s;
-        }
-        .choice-btn:active {
-            transform: scale(0.98);
-        }
-        
+        /* 選択肢ボタン */
+        .choice-btn { transition: all 0.1s; }
+        .choice-btn:active { transform: scale(0.98); }
+
         ruby rt {
             font-size: 0.6em;
             color: #64748b;
+        }
+
+        /* ================ スワイプカード ================ */
+        .swipe-card-container {
+            position: relative;
+            width: 100%;
+            max-width: 22rem;
+            height: 14rem;
+            margin: 0 auto;
+        }
+        .swipe-card {
+            position: absolute;
+            inset: 0;
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            cursor: grab;
+            touch-action: none; /* スワイプ取得のため重要 */
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            will-change: transform;
+            border: 2px solid #f1f5f9;
+            overflow: hidden;
+        }
+        .swipe-card.dragging {
+            transition: none;
+            cursor: grabbing;
+        }
+        .swipe-card.flying-right {
+            transform: translateX(150%) rotate(30deg) !important;
+            opacity: 0;
+        }
+        .swipe-card.flying-left {
+            transform: translateX(-150%) rotate(-30deg) !important;
+            opacity: 0;
+        }
+        .swipe-indicator {
+            position: absolute;
+            top: 1rem;
+            font-size: 3rem;
+            font-weight: 900;
+            padding: 0.25rem 1rem;
+            border: 4px solid;
+            border-radius: 0.75rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.1s;
+        }
+        .indicator-left {
+            left: 1rem;
+            color: #ef4444;
+            border-color: #ef4444;
+            transform: rotate(-15deg);
+        }
+        .indicator-right {
+            right: 1rem;
+            color: #22c55e;
+            border-color: #22c55e;
+            transform: rotate(15deg);
+        }
+
+        /* スワイプ用 ○× ボタン */
+        .swipe-btn {
+            width: 5rem;
+            height: 5rem;
+            border-radius: 9999px;
+            font-size: 2.5rem;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.1s;
+        }
+        .swipe-btn:active { transform: scale(0.92); }
+
+        /* スピーカーボタン */
+        .speaker-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            background: #eff6ff;
+            color: #3b82f6;
+            margin-left: 0.5rem;
+            font-size: 0.875rem;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+        .speaker-btn:active { transform: scale(0.92); }
+        .speaker-btn.speaking {
+            background: #3b82f6;
+            color: white;
+            animation: pulse-blue 1.2s infinite;
+        }
+        @keyframes pulse-blue {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+        }
+
+        /* 首都クイズの国名表示 */
+        .country-question {
+            background: linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%);
+            border-radius: 1rem;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            width: 100%;
+            max-width: 22rem;
+            border: 1px solid #e0e7ff;
         }
     </style>
 </head>
@@ -107,63 +214,94 @@
 
     <!-- ヘッダー -->
     <header class="bg-blue-600 text-white p-4 flex justify-between items-center shadow-md z-10">
-        <h1 class="text-xl font-bold tracking-wider" id="header-title">国旗クイズ</h1>
+        <h1 class="text-xl font-bold tracking-wider" id="header-title">世界クイズ</h1>
         <button id="btn-open-settings" class="text-xl p-2 hover:bg-blue-700 rounded-full transition" aria-label="設定">
             <i class="fas fa-cog"></i>
         </button>
     </header>
 
-    <!-- メインコンテンツ領域 -->
+    <!-- メインコンテンツ -->
     <main class="flex-grow relative flex flex-col">
 
-        <!-- ================= ホーム画面 ================= -->
-        <div id="screen-home" class="screen active flex-col p-6 h-full justify-center gap-8">
-            <div class="text-center mb-4">
-                <i class="fas fa-globe-americas text-6xl text-blue-500 mb-4"></i>
-                <h2 class="text-2xl font-black text-slate-700">世界国旗クイズ</h2>
-                <p class="text-slate-500 text-sm mt-2">モードと問題数を選んでスタート！</p>
+        <!-- ============ ホーム画面 ============ -->
+        <div id="screen-home" class="screen active flex-col p-6 h-full justify-center gap-6">
+            <div class="text-center mb-2">
+                <i class="fas fa-globe-americas text-6xl text-blue-500 mb-3"></i>
+                <h2 class="text-2xl font-black text-slate-700">世界クイズ</h2>
+                <p class="text-slate-500 text-sm mt-2">クイズ種類・モード・問題数を選んで開始！</p>
             </div>
 
-            <!-- モード選択 -->
-            <div class="bg-slate-100 p-1 rounded-xl flex shadow-inner">
-                <button id="mode-choices" class="flex-1 py-3 text-center font-bold rounded-lg transition-colors bg-white shadow text-blue-600" onclick="setMode('choices')">
-                    <i class="fas fa-th-large mr-2"></i>四択モード
-                </button>
-                <button id="mode-voice" class="flex-1 py-3 text-center font-bold rounded-lg transition-colors text-slate-500 hover:text-slate-700" onclick="setMode('voice')">
-                    <i class="fas fa-microphone mr-2"></i>音声入力
-                </button>
-            </div>
-
-            <!-- 問題数選択 -->
+            <!-- クイズ種類 -->
             <div>
-                <h3 class="text-sm font-bold text-slate-500 mb-3 text-center">問題数</h3>
-                <div class="grid grid-cols-3 gap-3" id="question-count-container">
+                <h3 class="text-xs font-bold text-slate-500 mb-2 text-center tracking-wider">クイズ種類</h3>
+                <div class="bg-slate-100 p-1 rounded-xl flex shadow-inner">
+                    <button id="type-flag" class="flex-1 py-2.5 text-center text-sm font-bold rounded-lg transition-colors bg-white shadow text-blue-600" onclick="setQuizType('flag')">
+                        <i class="fas fa-flag mr-1"></i>国旗
+                    </button>
+                    <button id="type-capital" class="flex-1 py-2.5 text-center text-sm font-bold rounded-lg transition-colors text-slate-500 hover:text-slate-700" onclick="setQuizType('capital')">
+                        <i class="fas fa-city mr-1"></i>首都
+                    </button>
+                </div>
+            </div>
+
+            <!-- 回答モード -->
+            <div>
+                <h3 class="text-xs font-bold text-slate-500 mb-2 text-center tracking-wider">回答モード</h3>
+                <div class="bg-slate-100 p-1 rounded-xl flex shadow-inner">
+                    <button id="mode-choices" class="flex-1 py-2.5 text-center text-sm font-bold rounded-lg transition-colors bg-white shadow text-blue-600" onclick="setMode('choices')">
+                        <i class="fas fa-th-large mr-1"></i>四択
+                    </button>
+                    <button id="mode-voice" class="flex-1 py-2.5 text-center text-sm font-bold rounded-lg transition-colors text-slate-500 hover:text-slate-700" onclick="setMode('voice')">
+                        <i class="fas fa-microphone mr-1"></i>音声
+                    </button>
+                    <button id="mode-swipe" class="flex-1 py-2.5 text-center text-sm font-bold rounded-lg transition-colors text-slate-500 hover:text-slate-700" onclick="setMode('swipe')">
+                        ○×
+                    </button>
+                </div>
+            </div>
+
+            <!-- 問題数 -->
+            <div>
+                <h3 class="text-xs font-bold text-slate-500 mb-2 text-center tracking-wider">問題数</h3>
+                <div class="grid grid-cols-3 gap-2" id="question-count-container">
                     <!-- JSで生成 -->
                 </div>
             </div>
 
             <!-- スタートボタン -->
-            <button onclick="startQuiz()" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg text-lg transition-transform active:scale-95 flex justify-center items-center gap-2">
+            <button onclick="startQuiz()" class="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg text-lg transition-transform active:scale-95 flex justify-center items-center gap-2">
                 <i class="fas fa-play"></i> クイズスタート
             </button>
-            
-            <p id="voice-warning" class="text-xs text-red-500 text-center hidden mt-2">
+
+            <p id="voice-warning" class="text-xs text-red-500 text-center hidden">
                 ※お使いのブラウザは音声入力に対応していません
             </p>
+            <p id="mode-info" class="text-xs text-slate-400 text-center"></p>
         </div>
 
-        <!-- ================= 設定画面 ================= -->
+        <!-- ============ 設定画面 ============ -->
         <div id="screen-settings" class="screen flex-col p-6 h-full">
             <h2 class="text-2xl font-bold mb-6 border-b pb-2"><i class="fas fa-sliders-h mr-2"></i>設定</h2>
-            
+
             <div class="flex items-center justify-between py-4 border-b">
-                <div>
+                <div class="flex-grow pr-4">
                     <h3 class="font-bold text-lg">ふりがな表示</h3>
                     <p class="text-sm text-slate-500">国名にふりがなを振ります</p>
                 </div>
-                <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="toggle" id="toggle-furigana" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300 top-0 left-0 z-10"/>
+                <div class="relative inline-block w-12 mr-2 align-middle select-none">
+                    <input type="checkbox" name="toggle1" id="toggle-furigana" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300 top-0 left-0 z-10"/>
                     <label for="toggle-furigana" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer transition-colors duration-300"></label>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between py-4 border-b">
+                <div class="flex-grow pr-4">
+                    <h3 class="font-bold text-lg">正式名称の自動読み上げ</h3>
+                    <p class="text-sm text-slate-500">回答後に正式名称を音声で読み上げます</p>
+                </div>
+                <div class="relative inline-block w-12 mr-2 align-middle select-none">
+                    <input type="checkbox" name="toggle2" id="toggle-tts" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300 top-0 left-0 z-10"/>
+                    <label for="toggle-tts" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer transition-colors duration-300"></label>
                 </div>
             </div>
 
@@ -172,25 +310,34 @@
             </button>
         </div>
 
-        <!-- ================= クイズ画面 ================= -->
+        <!-- ============ クイズ画面 ============ -->
         <div id="screen-quiz" class="screen flex-col h-full bg-slate-50">
             <!-- 進捗バー -->
             <div class="bg-slate-200 h-2 w-full">
                 <div id="progress-bar" class="bg-blue-500 h-2 transition-all duration-300 w-0"></div>
             </div>
-            
+
             <div class="p-4 flex justify-between items-center text-sm font-bold text-slate-500">
                 <span id="question-counter">問 1 / 10</span>
                 <span id="timer-display" class="font-mono text-base"><i class="far fa-clock mr-1"></i>0.0s</span>
             </div>
 
-            <div class="flex-grow flex flex-col items-center justify-center p-4">
-                <div class="w-full max-w-sm aspect-[3/2] flex items-center justify-center mb-8 relative">
-                    <!-- 画像ローディングプレースホルダー -->
-                    <div id="flag-loader" class="absolute inset-0 flex items-center justify-center text-slate-300">
-                        <i class="fas fa-spinner fa-spin text-4xl"></i>
+            <div class="flex-grow flex flex-col items-center justify-center p-4 gap-4">
+
+                <!-- 問題表示: 国旗 or 国名 -->
+                <div id="question-area" class="w-full flex items-center justify-center">
+                    <!-- 国旗クイズ用 -->
+                    <div id="question-flag" class="w-full max-w-sm aspect-[3/2] flex items-center justify-center relative">
+                        <div id="flag-loader" class="absolute inset-0 flex items-center justify-center text-slate-300">
+                            <i class="fas fa-spinner fa-spin text-4xl"></i>
+                        </div>
+                        <img id="flag-image" src="" alt="国旗" class="flag-image w-full h-full object-contain hidden relative z-10" onload="this.classList.remove('hidden'); document.getElementById('flag-loader').classList.add('hidden');">
                     </div>
-                    <img id="flag-image" src="" alt="国旗" class="flag-image w-full h-full object-contain hidden relative z-10" onload="this.classList.remove('hidden'); document.getElementById('flag-loader').classList.add('hidden');">
+                    <!-- 首都クイズ用 -->
+                    <div id="question-country" class="country-question hidden">
+                        <p class="text-xs text-slate-500 mb-1">この国の首都は？</p>
+                        <div id="country-name-text" class="text-2xl font-black text-slate-800"></div>
+                    </div>
                 </div>
 
                 <!-- 四択UI -->
@@ -199,32 +346,52 @@
                 </div>
 
                 <!-- 音声入力UI -->
-                <div id="ui-voice" class="w-full flex flex-col items-center justify-center hidden flex-grow">
-                    <div id="voice-result-text" class="h-12 text-xl font-bold text-slate-700 mb-6 text-center w-full px-4 break-words flex items-center justify-center">
+                <div id="ui-voice" class="w-full flex flex-col items-center justify-center hidden">
+                    <div id="voice-result-text" class="h-12 text-xl font-bold text-slate-700 mb-4 text-center w-full px-4 break-words flex items-center justify-center">
                         マイクをタップして国名を答えてください
                     </div>
-                    <button id="btn-mic" class="w-24 h-24 rounded-full bg-blue-100 text-blue-500 text-4xl shadow-lg flex items-center justify-center transition-all">
+                    <button id="btn-mic" class="w-20 h-20 rounded-full bg-blue-100 text-blue-500 text-3xl shadow-lg flex items-center justify-center transition-all">
                         <i class="fas fa-microphone"></i>
                     </button>
-                    <p class="text-slate-400 text-sm mt-6">※「アメリカ」でも「アメリカ合衆国」でも正解になります</p>
+                    <p class="text-slate-400 text-xs mt-4 text-center">※「アメリカ」「アメリカ合衆国」のどちらでも正解</p>
                 </div>
+
+                <!-- ○× スワイプUI -->
+                <div id="ui-swipe" class="w-full flex flex-col items-center justify-center hidden gap-4">
+                    <p class="text-sm text-slate-500 font-bold">この答えは正しい？</p>
+
+                    <div class="swipe-card-container">
+                        <div id="swipe-card" class="swipe-card">
+                            <div id="swipe-indicator-left" class="swipe-indicator indicator-left">×</div>
+                            <div id="swipe-indicator-right" class="swipe-indicator indicator-right">○</div>
+                            <div id="swipe-card-content" class="text-2xl font-black text-slate-800 text-center px-2"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-8 mt-2">
+                        <button id="btn-swipe-x" class="swipe-btn bg-red-100 text-red-500" aria-label="違う">×</button>
+                        <button id="btn-swipe-o" class="swipe-btn bg-green-100 text-green-500" aria-label="合っている">○</button>
+                    </div>
+
+                    <p class="text-xs text-slate-400 mt-1">タップ または カードをスワイプ</p>
+                </div>
+
             </div>
 
-            <!-- フィードバック（⭕️/❌） -->
+            <!-- フィードバック(○×) -->
             <div id="feedback-overlay" class="feedback-overlay">
                 <i id="feedback-icon" class="fas feedback-icon"></i>
             </div>
         </div>
 
-        <!-- ================= 結果画面 ================= -->
+        <!-- ============ 結果画面 ============ -->
         <div id="screen-result" class="screen flex-col h-full bg-slate-50 overflow-y-auto">
             <div class="p-6 flex flex-col items-center">
-                <h2 class="text-3xl font-black text-slate-800 mb-2">結果発表</h2>
-                
+                <h2 class="text-3xl font-black text-slate-800 mb-4">結果発表</h2>
+
                 <div class="bg-white w-full rounded-2xl shadow-md p-6 mb-6 text-center border-t-4 border-blue-500">
                     <div class="text-5xl font-black text-blue-600 mb-2" id="result-score">10/10</div>
                     <p class="text-slate-500 font-bold mb-4">正答率: <span id="result-percent">100%</span></p>
-                    
                     <div class="grid grid-cols-2 gap-4 text-left bg-slate-50 p-4 rounded-lg">
                         <div>
                             <p class="text-xs text-slate-400 mb-1">合計タイム</p>
@@ -237,11 +404,12 @@
                     </div>
                 </div>
 
-                <div class="w-full w-full mb-6">
-                    <h3 class="font-bold text-slate-700 mb-3 flex items-center"><i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>間違えた問題 (<span id="wrong-count">0</span>)</h3>
-                    <div id="wrong-list" class="flex flex-col gap-3">
-                        <!-- JSで生成 -->
-                    </div>
+                <div class="w-full mb-6">
+                    <h3 class="font-bold text-slate-700 mb-3 flex items-center">
+                        <i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>
+                        間違えた問題 (<span id="wrong-count">0</span>)
+                    </h3>
+                    <div id="wrong-list" class="flex flex-col gap-3"></div>
                     <p id="no-wrong-msg" class="text-center text-slate-400 py-4 hidden">全問正解です！素晴らしい！</p>
                 </div>
 
@@ -255,12 +423,7 @@
 </div>
 
 <script>
-/**
- * 国旗クイズ アプリケーションロジック
- */
-
-// --- データ定義 ---
-// 形式: id|国名|ふりがな|別名1|別名2...
+// ================== データ ==================
 const rawCountries = [
   "af|アフガニスタン|あふがにすたん",
   "al|アルバニア|あるばにあ",
@@ -459,6 +622,95 @@ const rawCountries = [
   "tw|台湾|たいわん"
 ];
 
+// 首都データ
+const capitals = {
+  af:"カブール", al:"ティラナ", dz:"アルジェ", ad:"アンドラ・ラ・ベリャ",
+  ao:"ルアンダ", ag:"セントジョンズ", ar:"ブエノスアイレス", am:"エレバン",
+  au:"キャンベラ", at:"ウィーン", az:"バクー", bs:"ナッソー",
+  bh:"マナーマ", bd:"ダッカ", bb:"ブリッジタウン", by:"ミンスク",
+  be:"ブリュッセル", bz:"ベルモパン", bj:"ポルトノボ", bt:"ティンプー",
+  bo:"スクレ", ba:"サラエボ", bw:"ハボローネ", br:"ブラジリア",
+  bn:"バンダルスリブガワン", bg:"ソフィア", bf:"ワガドゥグー", bi:"ギテガ",
+  cv:"プライア", kh:"プノンペン", cm:"ヤウンデ", ca:"オタワ",
+  cf:"バンギ", td:"ンジャメナ", cl:"サンティアゴ", cn:"北京",
+  co:"ボゴタ", km:"モロニ", cg:"ブラザビル", cd:"キンシャサ",
+  cr:"サンホセ", ci:"ヤムスクロ", hr:"ザグレブ", cu:"ハバナ",
+  cy:"ニコシア", cz:"プラハ", dk:"コペンハーゲン", dj:"ジブチ",
+  dm:"ロゾー", do:"サントドミンゴ", ec:"キト", eg:"カイロ",
+  sv:"サンサルバドル", gq:"マラボ", er:"アスマラ", ee:"タリン",
+  sz:"ムババーネ", et:"アディスアベバ", fj:"スバ", fi:"ヘルシンキ",
+  fr:"パリ", ga:"リーブルビル", gm:"バンジュール", ge:"トビリシ",
+  de:"ベルリン", gh:"アクラ", gr:"アテネ", gd:"セントジョージズ",
+  gt:"グアテマラシティ", gn:"コナクリ", gw:"ビサウ", gy:"ジョージタウン",
+  ht:"ポルトープランス", hn:"テグシガルパ", hu:"ブダペスト", is:"レイキャビク",
+  in:"ニューデリー", id:"ジャカルタ", ir:"テヘラン", iq:"バグダッド",
+  ie:"ダブリン", il:"エルサレム", it:"ローマ", jm:"キングストン",
+  jp:"東京", jo:"アンマン", kz:"アスタナ", ke:"ナイロビ",
+  ki:"タラワ", kp:"平壌", kr:"ソウル", kw:"クウェート",
+  kg:"ビシュケク", la:"ビエンチャン", lv:"リガ", lb:"ベイルート",
+  ls:"マセル", lr:"モンロビア", ly:"トリポリ", li:"ファドゥーツ",
+  lt:"ビリニュス", lu:"ルクセンブルク", mg:"アンタナナリボ", mw:"リロングウェ",
+  my:"クアラルンプール", mv:"マレ", ml:"バマコ", mt:"バレッタ",
+  mh:"マジュロ", mr:"ヌアクショット", mu:"ポートルイス", mx:"メキシコシティ",
+  fm:"パリキール", md:"キシナウ", mc:"モナコ", mn:"ウランバートル",
+  me:"ポドゴリツァ", ma:"ラバト", mz:"マプト", mm:"ネピドー",
+  na:"ウィントフック", nr:"ヤレン", np:"カトマンズ", nl:"アムステルダム",
+  nz:"ウェリントン", ni:"マナグア", ne:"ニアメ", ng:"アブジャ",
+  mk:"スコピエ", no:"オスロ", om:"マスカット", pk:"イスラマバード",
+  pw:"ンゲルルムッド", pa:"パナマシティ", pg:"ポートモレスビー", py:"アスンシオン",
+  pe:"リマ", ph:"マニラ", pl:"ワルシャワ", pt:"リスボン",
+  qa:"ドーハ", ro:"ブカレスト", ru:"モスクワ", rw:"キガリ",
+  kn:"バセテール", lc:"カストリーズ", vc:"キングスタウン", ws:"アピア",
+  sm:"サンマリノ", st:"サントメ", sa:"リヤド", sn:"ダカール",
+  rs:"ベオグラード", sc:"ビクトリア", sl:"フリータウン", sg:"シンガポール",
+  sk:"ブラチスラバ", si:"リュブリャナ", sb:"ホニアラ", so:"モガディシュ",
+  za:"プレトリア", ss:"ジュバ", es:"マドリード", lk:"スリジャヤワルダナプラコッテ",
+  sd:"ハルツーム", sr:"パラマリボ", se:"ストックホルム", ch:"ベルン",
+  sy:"ダマスカス", tj:"ドゥシャンベ", tz:"ドドマ", th:"バンコク",
+  tl:"ディリ", tg:"ロメ", to:"ヌクアロファ", tt:"ポートオブスペイン",
+  tn:"チュニス", tr:"アンカラ", tm:"アシガバート", tv:"フナフティ",
+  ug:"カンパラ", ua:"キーウ", ae:"アブダビ", gb:"ロンドン",
+  us:"ワシントンD.C.", uy:"モンテビデオ", uz:"タシュケント", vu:"ポートビラ",
+  va:"バチカン", ve:"カラカス", vn:"ハノイ", ye:"サナア",
+  zm:"ルサカ", zw:"ハラレ", tw:"台北"
+};
+
+// 正式名称(読み上げ用) - 通称と異なる場合のみ定義
+const officialNames = {
+  cn:"中華人民共和国", kp:"朝鮮民主主義人民共和国", kr:"大韓民国",
+  us:"アメリカ合衆国", ru:"ロシア連邦",
+  gb:"グレートブリテン及び北アイルランド連合王国", za:"南アフリカ共和国",
+  ir:"イラン・イスラム共和国", vn:"ベトナム社会主義共和国",
+  la:"ラオス人民民主共和国", in:"インド共和国", br:"ブラジル連邦共和国",
+  mx:"メキシコ合衆国", de:"ドイツ連邦共和国", fr:"フランス共和国",
+  it:"イタリア共和国", es:"スペイン王国", jp:"日本国",
+  au:"オーストラリア連邦", ar:"アルゼンチン共和国",
+  eg:"エジプト・アラブ共和国", sa:"サウジアラビア王国", th:"タイ王国",
+  ph:"フィリピン共和国", id:"インドネシア共和国",
+  pk:"パキスタン・イスラム共和国", bd:"バングラデシュ人民共和国",
+  np:"ネパール連邦民主共和国", lk:"スリランカ民主社会主義共和国",
+  mm:"ミャンマー連邦共和国", kh:"カンボジア王国",
+  sy:"シリア・アラブ共和国", jo:"ヨルダン・ハシェミット王国",
+  ye:"イエメン共和国", iq:"イラク共和国",
+  af:"アフガニスタン・イスラム共和国", tr:"トルコ共和国",
+  pl:"ポーランド共和国", ro:"ルーマニア", cz:"チェコ共和国",
+  bg:"ブルガリア共和国", gr:"ギリシャ共和国", rs:"セルビア共和国",
+  hr:"クロアチア共和国", at:"オーストリア共和国", ch:"スイス連邦",
+  be:"ベルギー王国", nl:"オランダ王国", dk:"デンマーク王国",
+  no:"ノルウェー王国", se:"スウェーデン王国", fi:"フィンランド共和国",
+  pt:"ポルトガル共和国", ng:"ナイジェリア連邦共和国",
+  et:"エチオピア連邦民主共和国", ke:"ケニア共和国", gh:"ガーナ共和国",
+  tz:"タンザニア連合共和国", ma:"モロッコ王国",
+  dz:"アルジェリア民主人民共和国", ca:"カナダ", pe:"ペルー共和国",
+  co:"コロンビア共和国", cl:"チリ共和国",
+  ve:"ベネズエラ・ボリバル共和国", bo:"ボリビア多民族国",
+  uy:"ウルグアイ東方共和国", cu:"キューバ共和国",
+  nz:"ニュージーランド", mn:"モンゴル国", kz:"カザフスタン共和国",
+  mc:"モナコ公国", li:"リヒテンシュタイン公国", ad:"アンドラ公国",
+  lu:"ルクセンブルク大公国", bn:"ブルネイ・ダルサラーム国",
+  tw:"中華民国"
+};
+
 const countries = rawCountries.map(data => {
     const parts = data.split('|');
     return {
@@ -466,17 +718,20 @@ const countries = rawCountries.map(data => {
         name: parts[1],
         kana: parts[2],
         aliases: parts.slice(3),
-        flagUrl: `https://flagcdn.com/w320/${parts[0]}.png`
+        flagUrl: `https://flagcdn.com/w320/${parts[0]}.png`,
+        capital: capitals[parts[0]] || ""
     };
 });
 
-// --- ステート管理 ---
+// ================== ステート ==================
 const state = {
     screen: 'home',
-    mode: 'choices', // 'choices' or 'voice'
-    questionCount: 10, // 10, 20, 50, 100, 'all'
+    quizType: 'flag',     // 'flag' or 'capital'
+    mode: 'choices',      // 'choices' / 'voice' / 'swipe'
+    questionCount: 10,
     settings: {
-        furigana: true
+        furigana: true,
+        tts: true
     },
     quiz: {
         questions: [],
@@ -484,13 +739,15 @@ const state = {
         history: [],
         questionStartTime: 0,
         isAnswering: false,
-        timerInterval: null
+        timerInterval: null,
+        swipeQuestionIsTrue: false,
+        swipeProposedAnswer: ""
     }
 };
 
 const counts = [10, 20, 50, 100, 'all'];
 
-// Web Speech API の準備
+// ================== 音声認識 ==================
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 const isSpeechSupported = !!SpeechRecognition;
@@ -507,98 +764,169 @@ if (isSpeechSupported) {
         stopMicPulse();
         checkAnswerVoice(transcript);
     };
-
     recognition.onerror = (event) => {
-        console.error("Speech Recognition Error:", event.error);
-        if(event.error === 'no-speech') {
-            document.getElementById('voice-result-text').innerText = "音声が検出されませんでした。もう一度お試しください。";
+        if (event.error === 'no-speech') {
+            document.getElementById('voice-result-text').innerText = "音声が検出されませんでした";
         } else {
-            document.getElementById('voice-result-text').innerText = "エラーが発生しました: " + event.error;
+            document.getElementById('voice-result-text').innerText = "エラー: " + event.error;
         }
         stopMicPulse();
     };
-    
-    recognition.onend = () => {
-        stopMicPulse();
-    };
+    recognition.onend = () => stopMicPulse();
 }
 
-// --- 初期化 ---
+// ================== 音声合成 (TTS) ==================
+const ttsSupported = !!window.speechSynthesis;
+let currentSpeakingBtn = null;
+
+function speak(text, btn) {
+    if (!ttsSupported || !text) return;
+    try {
+        window.speechSynthesis.cancel();
+        if (currentSpeakingBtn) {
+            currentSpeakingBtn.classList.remove('speaking');
+            currentSpeakingBtn = null;
+        }
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'ja-JP';
+        u.rate = 0.95;
+        if (btn) {
+            btn.classList.add('speaking');
+            currentSpeakingBtn = btn;
+            u.onend = u.onerror = () => {
+                btn.classList.remove('speaking');
+                if (currentSpeakingBtn === btn) currentSpeakingBtn = null;
+            };
+        }
+        window.speechSynthesis.speak(u);
+    } catch (e) { console.error(e); }
+}
+
+function getOfficialName(country) {
+    return officialNames[country.id] || country.name;
+}
+
+// ================== 初期化 ==================
 document.addEventListener('DOMContentLoaded', () => {
     initSettings();
     renderQuestionCounts();
     setupEventListeners();
-    
+    setupSwipeGestures();
     if (!isSpeechSupported) {
         document.getElementById('voice-warning').classList.remove('hidden');
     }
+    updateModeInfo();
 });
 
 function setupEventListeners() {
     document.getElementById('btn-open-settings').addEventListener('click', () => navigate('settings'));
-    
     document.getElementById('toggle-furigana').addEventListener('change', (e) => {
         state.settings.furigana = e.target.checked;
         saveSettings();
     });
-
+    document.getElementById('toggle-tts').addEventListener('change', (e) => {
+        state.settings.tts = e.target.checked;
+        saveSettings();
+    });
     document.getElementById('btn-mic').addEventListener('click', startDictation);
+
+    // スワイプ用 ○× ボタン
+    document.getElementById('btn-swipe-o').addEventListener('click', () => {
+        if (state.quiz.isAnswering) return;
+        animateSwipeAndAnswer('right');
+    });
+    document.getElementById('btn-swipe-x').addEventListener('click', () => {
+        if (state.quiz.isAnswering) return;
+        animateSwipeAndAnswer('left');
+    });
 }
 
 function initSettings() {
-    const saved = localStorage.getItem('flagQuizSettings');
+    const saved = localStorage.getItem('worldQuizSettings');
     if (saved) {
-        state.settings = JSON.parse(saved);
+        try {
+            const parsed = JSON.parse(saved);
+            state.settings = { ...state.settings, ...parsed };
+        } catch (e) {}
     }
     document.getElementById('toggle-furigana').checked = state.settings.furigana;
+    document.getElementById('toggle-tts').checked = state.settings.tts;
 }
 
 function saveSettings() {
-    localStorage.setItem('flagQuizSettings', JSON.stringify(state.settings));
+    localStorage.setItem('worldQuizSettings', JSON.stringify(state.settings));
 }
 
-// --- ナビゲーション ---
+// ================== ナビゲーション ==================
 function navigate(screenId) {
+    // TTS停止
+    if (ttsSupported) window.speechSynthesis.cancel();
+    if (currentSpeakingBtn) {
+        currentSpeakingBtn.classList.remove('speaking');
+        currentSpeakingBtn = null;
+    }
+
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(`screen-${screenId}`).classList.add('active');
     state.screen = screenId;
-
-    if (screenId === 'home') {
-        document.getElementById('btn-open-settings').style.visibility = 'visible';
-    } else {
-        document.getElementById('btn-open-settings').style.visibility = 'hidden';
-    }
+    document.getElementById('btn-open-settings').style.visibility = (screenId === 'home') ? 'visible' : 'hidden';
 }
 
-// --- ホーム画面UI ---
+// ================== ホーム画面UI ==================
+function setQuizType(type) {
+    state.quizType = type;
+    const btnFlag = document.getElementById('type-flag');
+    const btnCapital = document.getElementById('type-capital');
+    const activeCls = "flex-1 py-2.5 text-center text-sm font-bold rounded-lg transition-colors bg-white shadow text-blue-600";
+    const inactiveCls = "flex-1 py-2.5 text-center text-sm font-bold rounded-lg transition-colors text-slate-500 hover:text-slate-700";
+    btnFlag.className = type === 'flag' ? activeCls : inactiveCls;
+    btnCapital.className = type === 'capital' ? activeCls : inactiveCls;
+
+    // 首都クイズでは音声入力を無効化(漢字混じりや表記揺れのため)
+    if (type === 'capital' && state.mode === 'voice') {
+        setMode('choices');
+    }
+    updateModeInfo();
+}
+
 function setMode(mode) {
     if (mode === 'voice' && !isSpeechSupported) {
-        alert('お使いのブラウザは音声入力に対応していません。(ChromeやSafari等の最新版をご利用ください)');
+        alert('お使いのブラウザは音声入力に対応していません');
+        return;
+    }
+    if (mode === 'voice' && state.quizType === 'capital') {
+        alert('首都クイズでは音声入力モードは使用できません');
         return;
     }
     state.mode = mode;
-    const btnChoices = document.getElementById('mode-choices');
-    const btnVoice = document.getElementById('mode-voice');
-    
-    if (mode === 'choices') {
-        btnChoices.className = "flex-1 py-3 text-center font-bold rounded-lg transition-colors bg-white shadow text-blue-600";
-        btnVoice.className = "flex-1 py-3 text-center font-bold rounded-lg transition-colors text-slate-500 hover:text-slate-700";
-    } else {
-        btnVoice.className = "flex-1 py-3 text-center font-bold rounded-lg transition-colors bg-white shadow text-blue-600";
-        btnChoices.className = "flex-1 py-3 text-center font-bold rounded-lg transition-colors text-slate-500 hover:text-slate-700";
-    }
+    const btns = { choices: document.getElementById('mode-choices'),
+                   voice: document.getElementById('mode-voice'),
+                   swipe: document.getElementById('mode-swipe') };
+    const activeCls = "flex-1 py-2.5 text-center text-sm font-bold rounded-lg transition-colors bg-white shadow text-blue-600";
+    const inactiveCls = "flex-1 py-2.5 text-center text-sm font-bold rounded-lg transition-colors text-slate-500 hover:text-slate-700";
+    Object.keys(btns).forEach(k => {
+        btns[k].className = (k === mode) ? activeCls : inactiveCls;
+    });
+    updateModeInfo();
+}
+
+function updateModeInfo() {
+    const info = document.getElementById('mode-info');
+    const labels = {
+        flag: { choices: '国旗を見て4つから国名を選ぶ', voice: '国旗を見て国名を音声で答える', swipe: '国旗と国名の組み合わせを○×で判定' },
+        capital: { choices: '国名を見て4つから首都を選ぶ', voice: '', swipe: '国名と首都の組み合わせを○×で判定' }
+    };
+    info.innerText = labels[state.quizType][state.mode] || '';
 }
 
 function renderQuestionCounts() {
     const container = document.getElementById('question-count-container');
     container.innerHTML = '';
-    
     counts.forEach(count => {
         const btn = document.createElement('button');
         const text = count === 'all' ? '全問' : `${count}問`;
-        
         const isSelected = state.questionCount === count;
-        btn.className = `py-3 rounded-lg font-bold border-2 transition-all ${isSelected ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-slate-200 text-slate-500 hover:border-blue-300'}`;
+        btn.className = `py-2.5 rounded-lg text-sm font-bold border-2 transition-all ${isSelected ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-slate-200 text-slate-500 hover:border-blue-300'}`;
         btn.innerText = text;
         btn.onclick = () => {
             state.questionCount = count;
@@ -608,7 +936,7 @@ function renderQuestionCounts() {
     });
 }
 
-// --- クイズロジック ---
+// ================== クイズロジック ==================
 function shuffleArray(array) {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -619,25 +947,29 @@ function shuffleArray(array) {
 }
 
 function startQuiz() {
-    // 問題を準備
-    let shuffledCountries = shuffleArray(countries);
-    const limit = state.questionCount === 'all' ? countries.length : state.questionCount;
-    state.quiz.questions = shuffledCountries.slice(0, limit);
+    let shuffled = shuffleArray(countries);
+    // 首都クイズの場合、首都が定義されている国のみ
+    if (state.quizType === 'capital') {
+        shuffled = shuffled.filter(c => c.capital);
+    }
+    const limit = state.questionCount === 'all' ? shuffled.length : Math.min(state.questionCount, shuffled.length);
+    state.quiz.questions = shuffled.slice(0, limit);
     state.quiz.currentIndex = 0;
     state.quiz.history = [];
-    
-    // UI切り替え
-    const uiChoices = document.getElementById('ui-choices');
-    const uiVoice = document.getElementById('ui-voice');
-    
-    if (state.mode === 'choices') {
-        uiChoices.classList.remove('hidden');
-        uiVoice.classList.add('hidden');
+
+    // UI切替
+    ['ui-choices', 'ui-voice', 'ui-swipe'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    document.getElementById(`ui-${state.mode}`).classList.remove('hidden');
+
+    // 問題エリア切替
+    if (state.quizType === 'flag') {
+        document.getElementById('question-flag').classList.remove('hidden');
+        document.getElementById('question-country').classList.add('hidden');
     } else {
-        uiChoices.classList.add('hidden');
-        uiVoice.classList.remove('hidden');
+        document.getElementById('question-flag').classList.add('hidden');
+        document.getElementById('question-country').classList.remove('hidden');
     }
-    
+
     navigate('quiz');
     showQuestion();
 }
@@ -645,30 +977,35 @@ function startQuiz() {
 function showQuestion() {
     state.quiz.isAnswering = false;
     const currentQ = state.quiz.questions[state.quiz.currentIndex];
-    
-    // UI更新
+
     document.getElementById('question-counter').innerText = `問 ${state.quiz.currentIndex + 1} / ${state.quiz.questions.length}`;
     document.getElementById('progress-bar').style.width = `${((state.quiz.currentIndex) / state.quiz.questions.length) * 100}%`;
-    
-    // 画像セット
-    const img = document.getElementById('flag-image');
-    const loader = document.getElementById('flag-loader');
-    img.classList.add('hidden');
-    loader.classList.remove('hidden');
-    img.src = currentQ.flagUrl;
 
-    if (state.mode === 'choices') {
-        generateChoicesUI(currentQ);
+    // 問題表示
+    if (state.quizType === 'flag') {
+        const img = document.getElementById('flag-image');
+        const loader = document.getElementById('flag-loader');
+        img.classList.add('hidden');
+        loader.classList.remove('hidden');
+        img.src = currentQ.flagUrl;
     } else {
-        resetVoiceUI();
+        document.getElementById('country-name-text').innerHTML = getCountryHtml(currentQ);
     }
 
-    // タイマー開始
+    // モード別UI生成
+    if (state.mode === 'choices') {
+        generateChoicesUI(currentQ);
+    } else if (state.mode === 'voice') {
+        resetVoiceUI();
+    } else if (state.mode === 'swipe') {
+        generateSwipeUI(currentQ);
+    }
+
     state.quiz.questionStartTime = Date.now();
     startTimer();
-    
+
     // 次の画像をプリロード
-    if (state.quiz.currentIndex + 1 < state.quiz.questions.length) {
+    if (state.quizType === 'flag' && state.quiz.currentIndex + 1 < state.quiz.questions.length) {
         const nextImg = new Image();
         nextImg.src = state.quiz.questions[state.quiz.currentIndex + 1].flagUrl;
     }
@@ -688,7 +1025,7 @@ function stopTimer() {
     return Date.now() - state.quiz.questionStartTime;
 }
 
-// ふりがな付きHTML生成
+// ふりがなHTML
 function getCountryHtml(country) {
     if (state.settings.furigana && country.kana) {
         return `<ruby>${country.name}<rt>${country.kana}</rt></ruby>`;
@@ -696,121 +1033,76 @@ function getCountryHtml(country) {
     return country.name;
 }
 
+// ================== 四択UI ==================
 function generateChoicesUI(correctCountry) {
     const choices = [correctCountry];
-    while(choices.length < 4) {
+    while (choices.length < 4) {
         const rand = countries[Math.floor(Math.random() * countries.length)];
+        // 首都クイズでは首都を持つ国のみ、かつ首都が重複しないようにする
+        if (state.quizType === 'capital') {
+            if (!rand.capital) continue;
+            if (choices.some(c => c.capital === rand.capital)) continue;
+        }
         if (!choices.some(c => c.id === rand.id)) {
             choices.push(rand);
         }
     }
-    const shuffledChoices = shuffleArray(choices);
-    
+    const shuffled = shuffleArray(choices);
+
     const container = document.getElementById('ui-choices');
     container.innerHTML = '';
-    
-    shuffledChoices.forEach(choice => {
+
+    shuffled.forEach(choice => {
         const btn = document.createElement('button');
         btn.className = "choice-btn bg-white border-2 border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-slate-700 font-bold py-4 px-4 rounded-xl shadow-sm text-lg w-full text-center";
-        btn.innerHTML = getCountryHtml(choice);
+        if (state.quizType === 'flag') {
+            btn.innerHTML = getCountryHtml(choice);
+        } else {
+            btn.innerText = choice.capital;
+        }
         btn.onclick = () => {
-            if(state.quiz.isAnswering) return;
-            checkAnswerChoice(choice.id === correctCountry.id, choice.name);
+            if (state.quiz.isAnswering) return;
+            const isCorrect = (state.quizType === 'flag')
+                ? (choice.id === correctCountry.id)
+                : (choice.capital === correctCountry.capital);
+            const userAnswer = state.quizType === 'flag' ? choice.name : choice.capital;
+            handleAnswer(isCorrect, userAnswer);
         };
         container.appendChild(btn);
     });
 }
 
+// ================== 音声入力UI ==================
 function resetVoiceUI() {
     document.getElementById('voice-result-text').innerText = "マイクをタップして答える";
     stopMicPulse();
 }
 
-// 音声入力の文字列正規化（ひらがな化、スペース除去）
 function toHiragana(str) {
-    return str.replace(/[\u30a1-\u30f6]/g, function(match) {
-        var chr = match.charCodeAt(0) - 0x60;
-        return String.fromCharCode(chr);
-    });
+    return str.replace(/[\u30a1-\u30f6]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60));
 }
 
 function normalizeString(str) {
-    if(!str) return "";
+    if (!str) return "";
     return toHiragana(str).replace(/[\s　・]/g, '').toLowerCase();
 }
 
 function checkAnswerVoice(transcript) {
-    if(state.quiz.isAnswering) return;
-    
+    if (state.quiz.isAnswering) return;
     const currentQ = state.quiz.questions[state.quiz.currentIndex];
-    const normalizedInput = normalizeString(transcript);
-    
-    // 正解のバリエーションを作成
+    const normalized = normalizeString(transcript);
     const correctAnswers = [currentQ.name, currentQ.kana, ...(currentQ.aliases || [])];
-    
-    const isCorrect = correctAnswers.some(ans => normalizeString(ans) === normalizedInput);
-    
-    checkAnswerChoice(isCorrect, transcript);
+    const isCorrect = correctAnswers.some(ans => normalizeString(ans) === normalized);
+    handleAnswer(isCorrect, transcript);
 }
 
-function checkAnswerChoice(isCorrect, userAnswer) {
-    state.quiz.isAnswering = true;
-    const timeTaken = stopTimer();
-    const currentQ = state.quiz.questions[state.quiz.currentIndex];
-    
-    // 履歴保存
-    state.quiz.history.push({
-        isCorrect,
-        timeTaken,
-        country: currentQ,
-        userAnswer
-    });
-    
-    // フィードバック表示
-    showFeedback(isCorrect);
-    
-    // 次へ
-    setTimeout(() => {
-        hideFeedback();
-        state.quiz.currentIndex++;
-        if (state.quiz.currentIndex < state.quiz.questions.length) {
-            showQuestion();
-        } else {
-            showResult();
-        }
-    }, 1000); // 1秒後に次へ
-}
-
-// --- アニメーション・フィードバック ---
-function showFeedback(isCorrect) {
-    const overlay = document.getElementById('feedback-overlay');
-    const icon = document.getElementById('feedback-icon');
-    
-    if (isCorrect) {
-        icon.className = "far fa-circle feedback-icon correct-color";
-    } else {
-        icon.className = "fas fa-times feedback-icon incorrect-color";
-    }
-    
-    overlay.classList.add('show-feedback');
-}
-
-function hideFeedback() {
-    const overlay = document.getElementById('feedback-overlay');
-    overlay.classList.remove('show-feedback');
-}
-
-// --- 音声入力コントロール ---
 function startDictation() {
-    if(state.quiz.isAnswering) return;
-    if(!recognition) return;
-    
+    if (state.quiz.isAnswering || !recognition) return;
     try {
         document.getElementById('voice-result-text').innerText = "聞き取っています...";
         document.getElementById('btn-mic').classList.add('mic-active');
         recognition.start();
-    } catch(e) {
-        // すでに開始されている場合などのエラー回避
+    } catch (e) {
         console.log(e);
         stopMicPulse();
     }
@@ -820,64 +1112,298 @@ function stopMicPulse() {
     document.getElementById('btn-mic').classList.remove('mic-active');
 }
 
-// --- 結果画面 ---
-function formatTime(ms) {
-    const totalSeconds = ms / 1000;
-    if (totalSeconds < 60) {
-        return totalSeconds.toFixed(1) + "s";
+// ================== ○×スワイプUI ==================
+function generateSwipeUI(currentQ) {
+    // 50%の確率で正しいペア、50%で間違ったペア
+    const isTrue = Math.random() < 0.5;
+    state.quiz.swipeQuestionIsTrue = isTrue;
+
+    let proposed;
+    if (state.quizType === 'flag') {
+        // 国旗に対して国名を提示
+        if (isTrue) {
+            proposed = currentQ.name;
+        } else {
+            let other;
+            do {
+                other = countries[Math.floor(Math.random() * countries.length)];
+            } while (other.id === currentQ.id);
+            proposed = other.name;
+        }
+    } else {
+        // 国名に対して首都を提示
+        if (isTrue) {
+            proposed = currentQ.capital;
+        } else {
+            let other;
+            do {
+                other = countries[Math.floor(Math.random() * countries.length)];
+            } while (other.id === currentQ.id || !other.capital || other.capital === currentQ.capital);
+            proposed = other.capital;
+        }
     }
-    const mins = Math.floor(totalSeconds / 60);
-    const secs = (totalSeconds % 60).toFixed(1);
-    return `${mins}m ${secs}s`;
+    state.quiz.swipeProposedAnswer = proposed;
+
+    // カードリセット (transitionを一時無効にして瞬間リセット)
+    const card = document.getElementById('swipe-card');
+    card.style.transition = 'none';
+    card.classList.remove('flying-left', 'flying-right', 'dragging');
+    card.style.transform = '';
+    card.style.opacity = '1';
+    document.getElementById('swipe-indicator-left').style.opacity = '0';
+    document.getElementById('swipe-indicator-right').style.opacity = '0';
+    // 強制リフロー後、transition復活
+    void card.offsetWidth;
+    card.style.transition = '';
+
+    // カード内容(ふりがな付き対応)
+    const content = document.getElementById('swipe-card-content');
+    if (state.quizType === 'flag') {
+        // 提示は国名のみ(ふりがな対応)
+        const matchedCountry = countries.find(c => c.name === proposed);
+        content.innerHTML = matchedCountry ? getCountryHtml(matchedCountry) : proposed;
+    } else {
+        content.innerText = proposed;
+    }
+}
+
+// スワイプジェスチャー設定 (1度だけセットアップ)
+function setupSwipeGestures() {
+    const card = document.getElementById('swipe-card');
+    const indicatorLeft = document.getElementById('swipe-indicator-left');
+    const indicatorRight = document.getElementById('swipe-indicator-right');
+
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let isDragging = false;
+    let pointerId = null;
+
+    const SWIPE_THRESHOLD = 80;
+
+    const onStart = (clientX, clientY, e) => {
+        if (state.quiz.isAnswering) return;
+        if (state.mode !== 'swipe' || state.screen !== 'quiz') return;
+        isDragging = true;
+        startX = clientX;
+        startY = clientY;
+        currentX = 0;
+        card.classList.add('dragging');
+    };
+
+    const onMove = (clientX, clientY, e) => {
+        if (!isDragging) return;
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+        // 縦方向の動きが圧倒的に大きい場合はドラッグキャンセル(スクロール扱い)
+        if (Math.abs(dy) > Math.abs(dx) * 1.5 && Math.abs(dy) > 30) {
+            cancelDrag();
+            return;
+        }
+        currentX = dx;
+        const rotation = dx / 20;
+        card.style.transform = `translateX(${dx}px) rotate(${rotation}deg)`;
+        const op = Math.min(1, Math.abs(dx) / 80);
+        if (dx > 0) {
+            indicatorRight.style.opacity = op;
+            indicatorLeft.style.opacity = 0;
+        } else if (dx < 0) {
+            indicatorLeft.style.opacity = op;
+            indicatorRight.style.opacity = 0;
+        }
+        if (e && e.cancelable) e.preventDefault();
+    };
+
+    const cancelDrag = () => {
+        isDragging = false;
+        card.classList.remove('dragging');
+        card.style.transform = '';
+        indicatorLeft.style.opacity = '0';
+        indicatorRight.style.opacity = '0';
+        currentX = 0;
+    };
+
+    const onEnd = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        card.classList.remove('dragging');
+        if (Math.abs(currentX) > SWIPE_THRESHOLD) {
+            animateSwipeAndAnswer(currentX > 0 ? 'right' : 'left');
+        } else {
+            card.style.transform = '';
+            indicatorLeft.style.opacity = '0';
+            indicatorRight.style.opacity = '0';
+        }
+        currentX = 0;
+    };
+
+    // Touch events
+    card.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        onStart(e.touches[0].clientX, e.touches[0].clientY, e);
+    }, { passive: true });
+    card.addEventListener('touchmove', (e) => {
+        if (e.touches.length !== 1) return;
+        onMove(e.touches[0].clientX, e.touches[0].clientY, e);
+    }, { passive: false });
+    card.addEventListener('touchend', onEnd);
+    card.addEventListener('touchcancel', cancelDrag);
+
+    // Mouse events
+    card.addEventListener('mousedown', (e) => {
+        onStart(e.clientX, e.clientY, e);
+        e.preventDefault();
+    });
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging) onMove(e.clientX, e.clientY, e);
+    });
+    document.addEventListener('mouseup', () => {
+        if (isDragging) onEnd();
+    });
+}
+
+function animateSwipeAndAnswer(direction) {
+    if (state.quiz.isAnswering) return;
+    const card = document.getElementById('swipe-card');
+    card.classList.remove('dragging');
+    card.classList.add(direction === 'right' ? 'flying-right' : 'flying-left');
+    // ユーザーの回答: right=○(正しい), left=×(間違っている)
+    const userSaysTrue = (direction === 'right');
+    const isCorrect = (userSaysTrue === state.quiz.swipeQuestionIsTrue);
+    const userAnswerLabel = userSaysTrue ? '○' : '×';
+    handleAnswer(isCorrect, userAnswerLabel);
+}
+
+// ================== 回答処理 ==================
+function handleAnswer(isCorrect, userAnswer) {
+    state.quiz.isAnswering = true;
+    const timeTaken = stopTimer();
+    const currentQ = state.quiz.questions[state.quiz.currentIndex];
+
+    state.quiz.history.push({
+        isCorrect,
+        timeTaken,
+        country: currentQ,
+        userAnswer,
+        quizType: state.quizType,
+        mode: state.mode,
+        proposedAnswer: state.mode === 'swipe' ? state.quiz.swipeProposedAnswer : null,
+        swipeWasTrue: state.mode === 'swipe' ? state.quiz.swipeQuestionIsTrue : null
+    });
+
+    showFeedback(isCorrect);
+
+    // 正式名称の自動読み上げ
+    if (state.settings.tts && ttsSupported) {
+        let textToSpeak;
+        if (state.quizType === 'flag') {
+            textToSpeak = getOfficialName(currentQ);
+        } else {
+            textToSpeak = `${currentQ.name}の首都は${currentQ.capital}`;
+        }
+        setTimeout(() => speak(textToSpeak), 350);
+    }
+
+    setTimeout(() => {
+        hideFeedback();
+        state.quiz.currentIndex++;
+        if (state.quiz.currentIndex < state.quiz.questions.length) {
+            showQuestion();
+        } else {
+            showResult();
+        }
+    }, state.settings.tts ? 1800 : 1000);
+}
+
+// ================== フィードバック ==================
+function showFeedback(isCorrect) {
+    const overlay = document.getElementById('feedback-overlay');
+    const icon = document.getElementById('feedback-icon');
+    icon.className = isCorrect ? "far fa-circle feedback-icon correct-color" : "fas fa-times feedback-icon incorrect-color";
+    overlay.classList.add('show-feedback');
+}
+
+function hideFeedback() {
+    document.getElementById('feedback-overlay').classList.remove('show-feedback');
+}
+
+// ================== 結果画面 ==================
+function formatTime(ms) {
+    const total = ms / 1000;
+    if (total < 60) return total.toFixed(1) + "s";
+    const m = Math.floor(total / 60);
+    const s = (total % 60).toFixed(1);
+    return `${m}m ${s}s`;
 }
 
 function showResult() {
     document.getElementById('progress-bar').style.width = '100%';
     navigate('result');
-    
+
     const history = state.quiz.history;
-    const totalQ = history.length;
-    const correctCount = history.filter(h => h.isCorrect).length;
-    const totalTime = history.reduce((sum, h) => sum + h.timeTaken, 0);
-    const avgTime = totalQ > 0 ? totalTime / totalQ : 0;
-    const percent = Math.round((correctCount / totalQ) * 100);
-    
-    document.getElementById('result-score').innerText = `${correctCount}/${totalQ}`;
+    const total = history.length;
+    const correct = history.filter(h => h.isCorrect).length;
+    const totalTime = history.reduce((s, h) => s + h.timeTaken, 0);
+    const avg = total > 0 ? totalTime / total : 0;
+    const percent = Math.round((correct / total) * 100);
+
+    document.getElementById('result-score').innerText = `${correct}/${total}`;
     document.getElementById('result-percent').innerText = `${percent}%`;
     document.getElementById('result-total-time').innerText = formatTime(totalTime);
-    document.getElementById('result-avg-time').innerText = formatTime(avgTime);
-    
-    // 間違えた問題リスト
+    document.getElementById('result-avg-time').innerText = formatTime(avg);
+
     const wrongs = history.filter(h => !h.isCorrect);
-    const listContainer = document.getElementById('wrong-list');
+    const list = document.getElementById('wrong-list');
     const noWrongMsg = document.getElementById('no-wrong-msg');
-    
     document.getElementById('wrong-count').innerText = wrongs.length;
-    listContainer.innerHTML = '';
-    
+    list.innerHTML = '';
+
     if (wrongs.length === 0) {
-        listContainer.classList.add('hidden');
+        list.classList.add('hidden');
         noWrongMsg.classList.remove('hidden');
     } else {
-        listContainer.classList.remove('hidden');
+        list.classList.remove('hidden');
         noWrongMsg.classList.add('hidden');
-        
+
         wrongs.forEach(wrong => {
             const div = document.createElement('div');
             div.className = "flex items-center bg-white p-3 rounded-lg border border-slate-100 shadow-sm";
-            
+
+            const country = wrong.country;
+            let answerLabel, answerValue;
+            if (wrong.quizType === 'flag') {
+                answerLabel = '正しい国名';
+                answerValue = getCountryHtml(country);
+            } else {
+                answerLabel = '正しい首都';
+                answerValue = country.capital;
+            }
+
             div.innerHTML = `
-                <img src="${wrong.country.flagUrl}" class="w-16 h-10 object-contain border border-slate-200 rounded bg-white mr-4">
-                <div class="flex-grow">
-                    <p class="text-xs text-red-500 font-bold mb-0.5">正解</p>
-                    <p class="font-bold text-slate-800">${getCountryHtml(wrong.country)}</p>
+                <img src="${country.flagUrl}" class="w-16 h-10 object-contain border border-slate-200 rounded bg-white mr-3 flex-shrink-0">
+                <div class="flex-grow min-w-0">
+                    <p class="text-xs text-slate-500 mb-0.5">${wrong.quizType === 'capital' ? country.name : ''}</p>
+                    <p class="text-xs text-red-500 font-bold mb-0.5">${answerLabel}</p>
+                    <p class="font-bold text-slate-800 break-words">${answerValue}</p>
                 </div>
+                <button class="speaker-btn" aria-label="読み上げ"><i class="fas fa-volume-up"></i></button>
             `;
-            listContainer.appendChild(div);
+
+            const speakerBtn = div.querySelector('.speaker-btn');
+            speakerBtn.addEventListener('click', () => {
+                let text;
+                if (wrong.quizType === 'flag') {
+                    text = getOfficialName(country);
+                } else {
+                    text = `${country.name}の首都は${country.capital}`;
+                }
+                speak(text, speakerBtn);
+            });
+
+            list.appendChild(div);
         });
     }
 }
-
 </script>
 </body>
 </html>
